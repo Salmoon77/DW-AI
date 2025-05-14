@@ -17,7 +17,7 @@ project-root/
 │   └── schedule.json        # 학사일정 정보
 │
 ├── .env                     # API 키 보관
-├── index.js                 # Express 서버
+├── server.js                 # Express 서버
 └── README.md
 ```
 
