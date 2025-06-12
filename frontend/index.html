@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>대원고 정보 AI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-blue-100 min-h-screen flex items-center justify-center">
+
+  <div class="bg-white p-8 rounded-2xl shadow-2xl max-w-xl w-full">
+    <h1 class="text-3xl font-bold text-blue-800 mb-4 text-center">🏫 대원고 정보 AI</h1>
+    <p class="text-sm text-gray-500 text-center mb-6">"오늘 급식 뭐야?"라고 입력하거나 말해보세요!</p>
+
+    <div class="flex gap-2 mb-4">
+      <input
+        id="question"
+        type="text"
+        placeholder="예: 내일 시간표 알려줘"
+        class="flex-grow px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+      />
+      <button
+        id="voiceBtn"
+        onclick="startVoice()"
+        class="bg-gray-200 hover:bg-gray-300 px-4 rounded-lg text-gray-700"
+      >🎤</button>
+      <button
+        id="askBtn"
+        onclick="ask()"
+        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded-lg transition duration-300"
+      >
+        질문
+      </button>
+    </div>
+
+    <div id="log" class="h-64 overflow-y-auto bg-gray-50 p-4 rounded-lg text-sm text-gray-800 whitespace-pre-wrap">
+      🤖 <strong>AI:</strong> 무엇이 궁금한가요?
+    </div>
+
+  </div>
+
+  <script>
+    const questionInput = document.getElementById('question');
+    const askBtn = document.getElementById('askBtn');
+    const logDiv = document.getElementById('log');
+
+    // 엔터 키 입력 처리
+    questionInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') ask();
+    });
+
+    // 질문 전송 함수
+    async function ask() {
+      const question = questionInput.value.trim();
+      if (!question || askBtn.disabled) return;
+
+      addLog("🧑‍🎓 당신: " + question);
+
+      askBtn.disabled = true;
+      askBtn.innerText = "생성 중...";
+
+      try {
+        const res = await fetch('http://localhost:3000/api/ask', {
+          method: 'POST',
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: question })
+        });
+        const data = await res.json();
+        addLog("🤖 AI: " + (data.answer || "오류가 발생했어요."));
+      } catch (err) {
+        addLog("❌ 오류: " + err.message);
+      }
+
+      askBtn.disabled = false;
+      askBtn.innerText = "질문";
+      questionInput.value = "";
+    }
+
+    // 로그 추가 함수
+    function addLog(text) {
+      logDiv.innerText += "\n" + text;
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    // 음성 인식 함수 (Web Speech API)
+    function startVoice() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert("이 브라우저는 음성 인식을 지원하지 않습니다.");
+        return;
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'ko-KR';
+      recognition.start();
+
+      recognition.onstart = () => {
+        questionInput.placeholder = "듣는 중...";
+      };
+
+      recognition.onresult = (event) => {
+        const result = event.results[0][0].transcript;
+        questionInput.value = result;
+        questionInput.placeholder = "예: 오늘 급식 뭐야?";
+        ask();
+      };
+
+      recognition.onerror = (event) => {
+        questionInput.placeholder = "음성 인식 실패";
+        console.error(event.error);
+      };
+    }
+  </script>
+</body>
+</html>
